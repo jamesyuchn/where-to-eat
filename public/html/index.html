@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Where to eat</title>
+</head>
+<body>
+
+<h2>I'm a good guy</h2>
+<form id="pickForm">
+    Noon:
+    <input type="radio" name="currentTime" id="r1" value="noon">
+    Night:
+    <input type="radio" checked="checked" name="currentTime" id="r2" value="night"><br>
+    Weekend:
+    <input type="checkbox" name="isWeekend" id="isWeekend"><br>
+</form>
+<br>
+<button onclick="pickRestaurant(restPool)">Get Restaurant</button><br>
+<span id="showResult"></span>
+<span id="showAll"></span>
+<script type="text/javascript">
+    var restPool = new Array();
+    restPool[0] = {name:"FengWeiTing",      weight:100, type:"Chinese",  time:"both", weekendOnly:false};
+    restPool[1] = {name:"Yoshi",            weight:60,  type:"cheap",    time:"noon", weekendOnly:false};
+    restPool[2] = {name:"TeriyakiHouse",    weight:80,  type:"Dumpling", time:"both", weekendOnly:false};
+    restPool[3] = {name:"ChuanWangFu",      weight:90,  type:"Chinese",  time:"both", weekendOnly:false};
+    restPool[4] = {name:"Tempopo",          weight:100, type:"Curry",    time:"both", weekendOnly:false};
+    restPool[5] = {name:"TexasSteak",       weight:80,  type:"American", time:"both", weekendOnly:false};
+    restPool[6] = {name:"Dewick",           weight:50,  type:"cheap",    time:"noon", weekendOnly:false};
+    restPool[7] = {name:"SapporoRamen",     weight:70,  type:"Ramen",    time:"both", weekendOnly:false};
+    restPool[8] = {name:"Bonchon",          weight:80,  type:"Korean",   time:"both", weekendOnly:false};
+    restPool[9] = {name:"HotPotBuffet",     weight:80,  type:"Hotpot",   time:"night",weekendOnly:false};
+    restPool[10]= {name:"YiMaYiLa",         weight:80,  type:"BBQ",      time:"both", weekendOnly:false};
+    restPool[11]= {name:"YangTzeRiver",     weight:80,  type:"Dimsum",   time:"noon", weekendOnly:true};
+    restPool[12]= {name:"Shangri-La",       weight:80,  type:"taimei!",  time:"noon", weekendOnly:true};
+    restPool[13]= {name:"LaoXiAn",          weight:70,  type:"yangrou!", time:"both", weekendOnly:false};
+    restPool[14]= {name:"QingDaoYuan",      weight:60,  type:"Dumpling", time:"both", weekendOnly:false};
+
+    //pickRestaurant(restPool, currentTime, isWeekend);
+
+    function pickRestaurant(restPool){
+        var totalWeight = 0;
+        var selectNum;
+        var selected;
+
+        //initialize pool according to currentTime and isWeekend
+        var form = document.getElementById("pickForm");
+        var currentTime = form.currentTime[0].checked?form.currentTime[0].value:form.currentTime[1].value;
+        var isWeekend = form.isWeekend.checked;
+        var pool = new Array(); var poolCount = 0;
+        //console.log("CurrentTime = "+currentTime+" isWeekend="+isWeekend);
+        for(var i = 0; i<restPool.length; i++){
+            if( (restPool[i].time == 'both' || restPool[i].time == currentTime) && (isWeekend == true || restPool[i].weekendOnly == false)){
+                pool[poolCount] = restPool[i];
+                poolCount++;
+            }
+        }
+        console.log(pool);
+
+        for(var i = 0; i<pool.length; i++){
+            pool[i].min = totalWeight;
+            pool[i].max = totalWeight + pool[i].weight;
+            totalWeight += pool[i].weight;
+        }
+        selectNum = Math.floor(Math.random() * totalWeight);
+        selected = findNum(pool, 0, pool.length-1, selectNum);
+        document.getElementById("showResult").innerHTML="SelectNum = "+selectNum+" Name: "+pool[selected].name+" type: "+pool[selected].type;
+        document.getElementById("showAll").innerHTML=showAllWeight(pool);
+        standardize(pool, selected);
+    }
+
+    function findNum(pool, startNum, endNum, target){
+        var aveNum = startNum + Math.floor((endNum - startNum)/2);
+        if(aveNum == startNum){
+            if(target < pool[startNum].max && target >= pool[startNum].min){
+                return startNum;
+            }
+            else{
+                return endNum;
+            }
+        }
+        else{
+            if(target < pool[aveNum].max && target >= pool[aveNum].min){
+                return aveNum;
+            }
+            else if(target < pool[aveNum].min){
+                return findNum(pool, startNum, aveNum-1, target);
+            }
+            else{
+                return findNum(pool, aveNum+1, endNum, target);
+            }
+        }
+    }
+
+    function standardize(pool, selected){
+        var totalWeight = pool[selected].weight;
+        var weightPool = pool[selected].weight;
+        var sameType = 0;
+        pool[selected].weight = 0;
+        for(var i = 0; i<pool.length; i++){
+            if(i == selected) continue;
+            if(pool[i].type == pool[selected].type){
+                totalWeight += pool[i].weight;
+                pool[i].weight = Math.floor(pool[i].weight * 0.1);
+                weightPool += pool[i].weight * 9;
+                sameType++;
+            }
+        }
+        for(var i = 0; i<pool.length; i++){
+            if(i == selected) continue;
+            if(pool[i].type != pool[selected].type){
+                totalWeight += pool[i].weight;
+                pool[i].weight += Math.floor(weightPool/(pool.length - sameType -1));
+            }
+        }
+        var ratio = 10000/totalWeight;
+        for(var i = 0; i<pool.length; i++){
+            pool[i].weight = Math.floor(pool[i].weight * ratio);
+        }
+    }
+
+    function showAllWeight(pool){
+        var str = "<br><br>";
+        for(var i = 0; i<pool.length; i++){
+            str = str + "<p>Name: "+pool[i].name;
+            for(var j = 0; j<15-pool[i].name.length; j++){
+                str = str + "&nbsp";
+            }
+            str = str + "type: "+pool[i].type;
+            for( j = 0; j<10-pool[j].type.length; j++) {
+                str = str + "&nbsp";
+            }
+            str = str + " min: "+pool[i].min+" max: "+pool[i].max;
+        }
+        return str;
+    }
+</script>
+
+</body>
+</html>
